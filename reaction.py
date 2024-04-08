@@ -36,7 +36,7 @@ class Reaction:
     def block_interface(self, interface):
         block_incoming = f"sudo ebtables -A INPUT -i {interface} -j DROP"
         block_forwarding = f"sudo ebtables -A FORWARD -i {interface} -j DROP"
-        block_outgoing = f"sudo ebtables -A PREROUTING -i {interface} -j DROP"
+        block_outgoing = f"sudo ebtables -A OUTPUT -i {interface} -j DROP"
         if not(self.is_rule_in_table(block_incoming[14:], self.rules[1])):
             os.system(block_incoming)
             print('block_inc')
