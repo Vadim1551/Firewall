@@ -1,6 +1,4 @@
-#!/usr/bin/python3
 from analysis import *
-
 
 def getConf():
     config = {}

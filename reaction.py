@@ -1,9 +1,18 @@
-import os
+import subprocess
 from scapy.layers.l2 import ARP
 from scapy.all import send
 
 
 class Reaction:
+    def __init__(self, rules):
+        self.rules = rules
+
+    def is_rule_in_table(self, rule, table):
+        if rule in table:
+            return True
+        else:
+            return False
+
     def send_correct_ARP(self, ip, static_ip_mac_table):
         # Отправка корректного ARP ответа для восстановления правильной ассоциации
         # в ARP таблицах в сети
@@ -25,5 +34,15 @@ class Reaction:
         os.system(block_incoming)
 
     def block_interface(self, interface):
-        block_incoming = f"sudo iptables -A INPUT -i {interface} -j DROP"
-        os.system(block_incoming)
+        block_incoming = f"sudo ebtables -A INPUT -i {interface} -j DROP"
+        block_forwarding = f"sudo ebtables -A FORWARD -i {interface} -j DROP"
+        block_outgoing = f"sudo ebtables -A PREROUTING -i {interface} -j DROP"
+        if not(self.is_rule_in_table(block_incoming[14:], self.rules[1])):
+            os.system(block_incoming)
+            print('block_inc')
+        if not(self.is_rule_in_table(block_forwarding[14:], self.rules[1])):
+            os.system(block_forwarding)
+            print("BLOCK forw")
+        if not(self.is_rule_in_table(block_outgoing[14:], self.rules[1])):
+            os.system(block_outgoing)
+            print("BLOCK out")

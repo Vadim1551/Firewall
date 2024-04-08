@@ -1,13 +1,16 @@
-from scapy.all import *
 from detect import Detect
 import threading
 from scapy.layers.l2 import Dot1Q, Ether
 from scapy.layers.l2 import ARP
+import subprocess
+import re
+from datetime import datetime
+from scapy.all import *
 
 
 class Analys():
     def __init__(self, conf):
-        self.detect = Detect(conf['path_to_log'])
+        self.detect = Detect(conf['path_to_log'], None)
         self.current_arp_table = {}
         # Время, в течение которого изменение MAC-адреса считается подозрительным#
         self.mac_address_change_time = float(conf['MAC_address_change_time'])
@@ -27,6 +30,18 @@ class Analys():
         self.arp_buffer = {}
         self.max_new_arp = int(conf['Max_new_ARP_in_the_analyzed_time'])
         self.interfaces = conf['Listening_Interfaces'].split(',')
+        self.enable_block_interface = conf['Enable_block_interface']
+        self.current_blocked_interfaces = []
+
+    def get_ip_eb_tables(self):
+        try:
+            iprules = subprocess.check_output("iptables-save", shell=True).decode()
+            ebrules = subprocess.check_output("ebtables-save", shell=True).decode()
+            return (iprules, ebrules)
+
+        except subprocess.CalledProcessError as ex:
+            print(ex)
+            exit()
 
     def get_static_ip_mac_table(self):
         if self.path_to_static_table is not None:
@@ -69,18 +84,15 @@ class Analys():
 
     def periodic_analysis_count_mac(self):
         while True:
-            print(self.mac_buffer)
-            print(self.arp_buffer)
-            self.detect.cam_or_arp_table_owerflow_detection(self.mac_buffer,
+            list_interfaces = self.detect.cam_or_arp_table_owerflow_detection(self.mac_buffer,
                                                             self.mac_buffer,
                                                             self.max_new_mac,
-                                                            self.max_new_arp)
-            for interface in self.interfaces:
-                self.mac_buffer[interface].clear()
-                self.arp_buffer[interface].clear()
-            print(self.mac_buffer)
-            print(self.arp_buffer)
-            time.sleep(self.analysis_max_mac_time)
+                                                            self.max_new_arp,
+                                                            self.enable_block_interface, self.current_blocked_interfaces):
+            if len(list_interfaces) > 0:
+                for item in list_interfaces:
+                    self.current_blocked_interfaces.append(item)
+
 
     def determining_the_package_type(self, packet):
         try:
@@ -92,10 +104,11 @@ class Analys():
 
             if self.enable_arp_spoof_detect == 'yes':
                 if packet.haslayer(ARP):
-                    ip = packet[ARP].psrc
-                    mac = packet[ARP].hwsrc
-                    self.arp_buffer[packet_interface].add(ip)
                     if packet[ARP].op == 2:
+                        print("Get ARP response")
+                        ip = packet[ARP].psrc
+                        mac = packet[ARP].hwsrc
+                        self.arp_buffer[packet_interface].add(ip)
                         if self.detection_mode == 'time':
                             if self.current_arp_table:
                                 self.current_arp_table = self.detect.arp_mac_spoof_detection_time(ip,
@@ -134,7 +147,7 @@ class Analys():
     def start_analysis(self):
         self.get_current_arp_table()
         self.get_static_ip_mac_table()
-
+        self.detect.reaction.rules = self.get_ip_eb_tables()
         if 'yes' in (self.enable_arp_spoof_detect,
                      self.enable_vlan_hopping_detect,
                      self.enable_cam_table_owerflow_detect):
@@ -149,3 +162,4 @@ class Analys():
                 timer.start()
 
             sniff(prn=self.determining_the_package_type, store=False, iface=self.interfaces)
+            #print('Start')
