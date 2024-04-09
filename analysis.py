@@ -14,7 +14,7 @@ class Analys():
         self.current_arp_table = {}
         # Время, в течение которого изменение MAC-адреса считается подозрительным#
         self.mac_address_change_time = float(conf['MAC_address_change_time'])
-        self.detection_mode = conf['Detection_mode']
+        self.arp_mac_spoof_detection_method = conf['Arp_mac_spoof_detection_method']
         self.enable_block_ip = conf['Enable_block_ip'].lower()
         self.enable_send_correct_arp = conf['Enable_send_correct_ARP'].lower()
         self.static_ip_mac_table = {}
@@ -88,7 +88,7 @@ class Analys():
                                                             self.mac_buffer,
                                                             self.max_new_mac,
                                                             self.max_new_arp,
-                                                            self.enable_block_interface, self.current_blocked_interfaces):
+                                                            self.enable_block_interface, self.current_blocked_interfaces)
             if len(list_interfaces) > 0:
                 for item in list_interfaces:
                     self.current_blocked_interfaces.append(item)
@@ -109,7 +109,7 @@ class Analys():
                         ip = packet[ARP].psrc
                         mac = packet[ARP].hwsrc
                         self.arp_buffer[packet_interface].add(ip)
-                        if self.detection_mode == 'time':
+                        if self.arp_mac_spoof_detection_method == 'time':
                             if self.current_arp_table:
                                 self.current_arp_table = self.detect.arp_mac_spoof_detection_time(ip,
                                                                                                   mac,
@@ -121,7 +121,7 @@ class Analys():
                             else:
                                 self.detect.loger.log_message("[ERROR] Failed to get ARP-table")
 
-                        elif self.detection_mode == 'static_table':
+                        elif self.arp_mac_spoof_detection_method == 'static_table':
                             if self.static_ip_mac_table:
                                 self.detect.arp_mac_spoof_detection_static(ip,
                                                                            mac,
@@ -161,5 +161,6 @@ class Analys():
                 timer.daemon = True
                 timer.start()
 
+            print('Start')
             sniff(prn=self.determining_the_package_type, store=False, iface=self.interfaces)
-            #print('Start')
+

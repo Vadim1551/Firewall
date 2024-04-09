@@ -4,9 +4,11 @@ from email.header import Header
 import os
 from dotenv import load_dotenv
 
+
 class Sender:
     def __init__(self):
         load_dotenv()
+
     def send_message_to_owner(self, text):
         login = os.getenv("LOGIN")
         password = os.getenv("PASSWORD")
