@@ -67,7 +67,7 @@ class Detect():
                 self.reaction.block_mac(src_mac)
                 self.loger.log_message(f"[+] Входящий трафик от MAC {src_mac} был заблокирован")
 
-    def cam_or_arp_table_owerflow_detection(self, arp_and_mac_buffer, max_new_mac, max_new_arp, enable_block_interface):
+    def cam_or_arp_table_owerflow_detection(self, arp_and_mac_buffer, max_new_mac, max_new_arp, enable_block_interface): #, current_block_interfaces):
         # Очистить буфер после обработки
         list_blocked = []
         if arp_and_mac_buffer:
@@ -75,6 +75,7 @@ class Detect():
                 if len(value['mac']) > max_new_mac or len(value['arp']) > max_new_arp:
                     message = f"[WARNING] Обнаружена атака CAM_table_owerflow на интерфейсе {key}"
                     print(message)
+                    self.loger.log_message(message)
                     #self.sender.send_message_to_owner(message)
                     if enable_block_interface == 'yes':
                         print('Start blocking')
@@ -82,4 +83,4 @@ class Detect():
                         self.reaction.block_interface(key)
                         self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
                         list_blocked.append(key)
-                    self.loger.log_message(message)
+        return list_blocked

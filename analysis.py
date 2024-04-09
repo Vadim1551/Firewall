@@ -25,7 +25,7 @@ class Analys:
         self.enable_block_mac = conf['Enable_block_mac'].lower()
         self.max_new_arp = int(conf['Max_new_ARP_in_the_analyzed_time'])
         self.enable_block_interface = conf['Enable_block_interface']
-        self.current_blocked_interfaces = set()
+        self.current_blocked_interfaces = set(conf['Blocked_interfaces'].split(','))
         self.arp_and_mac_buffer = {interface: {'mac': set(), 'arp': set()} for interface in self.interfaces}
 
     def get_ip_eb_tables(self):
@@ -83,7 +83,7 @@ class Analys:
                                                                               self.max_new_mac,
                                                                               self.max_new_arp,
                                                                               self.enable_block_interface)
-            if list_interfaces > 0:
+            if list_interfaces:
                 for interface in list_interfaces:
                     self.current_blocked_interfaces.add(interface)
                     self.arp_and_mac_buffer[interface]['mac'].clear()
@@ -148,10 +148,6 @@ class Analys:
         if 'yes' in (self.enable_arp_spoof_detect,
                      self.enable_vlan_hopping_detect,
                      self.enable_cam_table_owerflow_detect):
-
-            blocked_int = conf['Blocked_interfaces']
-            if blocked_int != 'no':
-                self.current_blocked_interfaces = set(blocked_int.split(','))
 
             if self.enable_cam_table_owerflow_detect == 'yes':
                 timer = threading.Thread(target=self.periodic_analysis_count_mac)
