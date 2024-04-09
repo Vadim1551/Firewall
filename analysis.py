@@ -2,7 +2,7 @@ from detect import Detect
 from scapy.layers.l2 import Dot1Q, Ether
 from scapy.layers.l2 import ARP
 from scapy.all import *
-
+import time
 
 class Analys:
     def __init__(self, conf):
@@ -88,6 +88,7 @@ class Analys:
                     self.current_blocked_interfaces.add(interface)
                     self.arp_and_mac_buffer[interface]['mac'].clear()
                     self.arp_and_mac_buffer[interface]['arp'].clear()
+            time.sleep(0.5)
 
 
     def determining_the_package_type(self, packet):
@@ -98,6 +99,16 @@ class Analys:
                     if packet.haslayer(Ether):
                         mac_src = packet[Ether].src
                         self.arp_and_mac_buffer[packet_interface]['mac'].add(mac_src)
+                        #list_interfaces = self.detect.cam_or_arp_table_owerflow_detection(self.arp_and_mac_buffer,
+                        #                                                      self.max_new_mac,
+                        #                                                      self.max_new_arp,
+                        #                                                      self.enable_block_interface)
+                        #if list_interfaces:
+                        #    for interface in list_interfaces:
+                        #        self.current_blocked_interfaces.add(interface)
+                        #        self.arp_and_mac_buffer[interface]['mac'].clear()
+                        #        self.arp_and_mac_buffer[interface]['arp'].clear()
+
 
                 if self.enable_arp_spoof_detect == 'yes':
                     if packet.haslayer(ARP):
