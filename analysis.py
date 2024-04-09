@@ -1,15 +1,12 @@
 from detect import Detect
-import threading
 from scapy.layers.l2 import Dot1Q, Ether
 from scapy.layers.l2 import ARP
-import subprocess
-import re
-from datetime import datetime
 from scapy.all import *
 
 
-class Analys():
+class Analys:
     def __init__(self, conf):
+        self.interfaces = conf['Listening_Interfaces'].split(',')
         self.detect = Detect(conf['path_to_log'], None)
         self.current_arp_table = {}
         # Время, в течение которого изменение MAC-адреса считается подозрительным#
@@ -21,23 +18,21 @@ class Analys():
         self.path_to_static_table = conf.get('Static_ip_mac_table_path')
         self.analysis_max_mac_time = int(conf['Analysis_max_mac_time'])
         self.max_new_mac = int(conf['Max_new_MAC_in_the_analyzed_time'])
-        self.mac_buffer = {}
         self.allowed_vlan = set(conf['Expected_VLAN_IDs'].split(','))
         self.enable_arp_spoof_detect = conf['Enable_ARP_spoofing_detect'].lower()
         self.enable_cam_table_owerflow_detect = conf['Enable_CAM_table_overflow_detect'].lower()
         self.enable_vlan_hopping_detect = conf['Enable_VLAN_hopping_detect'].lower()
         self.enable_block_mac = conf['Enable_block_mac'].lower()
-        self.arp_buffer = {}
         self.max_new_arp = int(conf['Max_new_ARP_in_the_analyzed_time'])
-        self.interfaces = conf['Listening_Interfaces'].split(',')
         self.enable_block_interface = conf['Enable_block_interface']
-        self.current_blocked_interfaces = []
+        self.current_blocked_interfaces = set()
+        self.arp_and_mac_buffer = {interface: {'mac': set(), 'arp': set()} for interface in self.interfaces}
 
     def get_ip_eb_tables(self):
         try:
             iprules = subprocess.check_output("iptables-save", shell=True).decode()
             ebrules = subprocess.check_output("ebtables-save", shell=True).decode()
-            return (iprules, ebrules)
+            return [iprules, ebrules]
 
         except subprocess.CalledProcessError as ex:
             print(ex)
@@ -84,62 +79,64 @@ class Analys():
 
     def periodic_analysis_count_mac(self):
         while True:
-            list_interfaces = self.detect.cam_or_arp_table_owerflow_detection(self.mac_buffer,
-                                                            self.mac_buffer,
-                                                            self.max_new_mac,
-                                                            self.max_new_arp,
-                                                            self.enable_block_interface, self.current_blocked_interfaces)
-            if len(list_interfaces) > 0:
-                for item in list_interfaces:
-                    self.current_blocked_interfaces.append(item)
+            list_interfaces = self.detect.cam_or_arp_table_owerflow_detection(self.arp_and_mac_buffer,
+                                                                              self.max_new_mac,
+                                                                              self.max_new_arp,
+                                                                              self.enable_block_interface)
+            if list_interfaces > 0:
+                for interface in list_interfaces:
+                    self.current_blocked_interfaces.add(interface)
+                    self.arp_and_mac_buffer[interface]['mac'].clear()
+                    self.arp_and_mac_buffer[interface]['arp'].clear()
 
 
     def determining_the_package_type(self, packet):
         try:
             packet_interface = packet.sniffed_on
-            if self.enable_cam_table_owerflow_detect == 'yes':
-                if packet.haslayer(Ether):
-                    mac_src = packet[Ether].src
-                    self.mac_buffer[packet_interface].add(mac_src)
+            if packet_interface not in self.current_blocked_interfaces:
+                if self.enable_cam_table_owerflow_detect == 'yes':
+                    if packet.haslayer(Ether):
+                        mac_src = packet[Ether].src
+                        self.arp_and_mac_buffer[packet_interface]['mac'].add(mac_src)
 
-            if self.enable_arp_spoof_detect == 'yes':
-                if packet.haslayer(ARP):
-                    if packet[ARP].op == 2:
-                        print("Get ARP response")
-                        ip = packet[ARP].psrc
-                        mac = packet[ARP].hwsrc
-                        self.arp_buffer[packet_interface].add(ip)
-                        if self.arp_mac_spoof_detection_method == 'time':
-                            if self.current_arp_table:
-                                self.current_arp_table = self.detect.arp_mac_spoof_detection_time(ip,
-                                                                                                  mac,
-                                                                                                  self.current_arp_table,
-                                                                                                  self.mac_address_change_time,
-                                                                                                  self.enable_block_ip,
-                                                                                                  self.enable_send_correct_arp,
-                                                                                                  packet_interface)
-                            else:
-                                self.detect.loger.log_message("[ERROR] Failed to get ARP-table")
+                if self.enable_arp_spoof_detect == 'yes':
+                    if packet.haslayer(ARP):
+                        if packet[ARP].op == 2:
+                            print("Get ARP response")
+                            ip = packet[ARP].psrc
+                            mac = packet[ARP].hwsrc
+                            self.arp_and_mac_buffer[packet_interface]['arp'].add(ip)
+                            if self.arp_mac_spoof_detection_method == 'time':
+                                if self.current_arp_table:
+                                    self.current_arp_table = self.detect.arp_mac_spoof_detection_time(ip,
+                                                                                                      mac,
+                                                                                                      self.current_arp_table,
+                                                                                                      self.mac_address_change_time,
+                                                                                                      self.enable_block_ip,
+                                                                                                      self.enable_send_correct_arp,
+                                                                                                      packet_interface)
+                                else:
+                                    self.detect.loger.log_message("[ERROR] Failed to get ARP-table")
 
-                        elif self.arp_mac_spoof_detection_method == 'static_table':
-                            if self.static_ip_mac_table:
-                                self.detect.arp_mac_spoof_detection_static(ip,
-                                                                           mac,
-                                                                           self.static_ip_mac_table,
-                                                                           self.enable_block_ip,
-                                                                           self.enable_send_correct_arp,
-                                                                           packet_interface)
-                            else:
-                                self.detect.loger.log_message(
-                                    "[ERROR] You cannot use arp_spoof_static without a static IP:MAC table")
+                            elif self.arp_mac_spoof_detection_method == 'static_table':
+                                if self.static_ip_mac_table:
+                                    self.detect.arp_mac_spoof_detection_static(ip,
+                                                                               mac,
+                                                                               self.static_ip_mac_table,
+                                                                               self.enable_block_ip,
+                                                                               self.enable_send_correct_arp,
+                                                                               packet_interface)
+                                else:
+                                    self.detect.loger.log_message(
+                                        "[ERROR] You cannot use arp_spoof_static without a static IP:MAC table")
 
-            if self.enable_vlan_hopping_detect == 'yes':
-                if packet.haslayer(Dot1Q):
-                    vlan_id = packet[Dot1Q].vlan
-                    src_mac = packet[Ether].src
-                    packet_type = packet[Ether].type
-                    self.detect.vlan_hopping_detection(src_mac, vlan_id, packet_type, self.allowed_vlan,
-                                                       self.enable_block_mac, packet_interface)
+                if self.enable_vlan_hopping_detect == 'yes':
+                    if packet.haslayer(Dot1Q):
+                        vlan_id = packet[Dot1Q].vlan
+                        src_mac = packet[Ether].src
+                        packet_type = packet[Ether].type
+                        self.detect.vlan_hopping_detection(src_mac, vlan_id, packet_type, self.allowed_vlan,
+                                                           self.enable_block_mac, packet_interface)
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -152,15 +149,14 @@ class Analys():
                      self.enable_vlan_hopping_detect,
                      self.enable_cam_table_owerflow_detect):
 
-            if self.enable_cam_table_owerflow_detect == 'yes':
-                for interface in self.interfaces:
-                    self.mac_buffer[interface] = set()
-                    self.arp_buffer[interface] = set()
+            blocked_int = conf['Blocked_interfaces']
+            if blocked_int != 'no':
+                self.current_blocked_interfaces = set(blocked_int.split(','))
 
+            if self.enable_cam_table_owerflow_detect == 'yes':
                 timer = threading.Thread(target=self.periodic_analysis_count_mac)
                 timer.daemon = True
                 timer.start()
 
             print('Start')
             sniff(prn=self.determining_the_package_type, store=False, iface=self.interfaces)
-

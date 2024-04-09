@@ -24,6 +24,5 @@ def start():
     firewall = Analys(conf)
     firewall.start_analysis()
 
-
 if __name__ == "__main__":
     start()

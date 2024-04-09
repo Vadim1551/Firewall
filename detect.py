@@ -1,6 +1,7 @@
 from send_message import Sender
 from reaction import Reaction
 from log import Loger
+from datetime import datetime
 
 
 class Detect():
@@ -66,31 +67,19 @@ class Detect():
                 self.reaction.block_mac(src_mac)
                 self.loger.log_message(f"[+] Входящий трафик от MAC {src_mac} был заблокирован")
 
-    def cam_or_arp_table_owerflow_detection(self, mac_buffer, arp_buffer, max_new_mac, max_new_arp, enable_block_interface, current_blocked_interfaces):
+    def cam_or_arp_table_owerflow_detection(self, arp_and_mac_buffer, max_new_mac, max_new_arp, enable_block_interface):
         # Очистить буфер после обработки
         list_blocked = []
-        for key, value in mac_buffer.items():
-            if key not in current_blocked_interfaces and len(value) > max_new_mac:
-                message = f"[WARNING] Обнаружена атака CAM_table_owerflow на интерфейсе {key}"
-                print(message)
-                #self.sender.send_message_to_owner(message)  # Додумать отправку сообщения
-                if enable_block_interface == 'yes':
-                    print('Start blocking')
-                    print(f'Interface{key}')
-                    self.reaction.block_interface(key)
-                    self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
-                self.loger.log_message(message)
-                list_blocked.append(key)
-
-        for key, value in arp_buffer.items():
-            if key not in current_blocked_interfaces and len(value) > max_new_arp:
-                message = f"[WARNING] Обнаружена атака CAM_table_owerflow  на интерфейсе {key}"
-                print(message)
-                #self.sender.send_message_to_owner(message)  # Додумать отправку сообщения
-                if enable_block_interface == 'yes':
-                    print('Start blocking')
-                    print(f'Interface{key}')
-                    self.reaction.block_interface(key)
-                    self.loger.log_message(f"[+] Входящий трафик с интерфейса {key} был заблокирован")
-                self.loger.log_message(message)
-                list_blocked.append(key)
+        if arp_and_mac_buffer:
+            for key, value in arp_and_mac_buffer.items():
+                if len(value['mac']) > max_new_mac or len(value['arp']) > max_new_arp:
+                    message = f"[WARNING] Обнаружена атака CAM_table_owerflow на интерфейсе {key}"
+                    print(message)
+                    #self.sender.send_message_to_owner(message)
+                    if enable_block_interface == 'yes':
+                        print('Start blocking')
+                        print(f'Interface {key}')
+                        self.reaction.block_interface(key)
+                        self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
+                        list_blocked.append(key)
+                    self.loger.log_message(message)
