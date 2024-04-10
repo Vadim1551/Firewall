@@ -1,0 +1,43 @@
+{
+  "path_to_log": "",
+
+  "listening_interfaces": ["eth1"],
+
+  "blocked_interfaces": [],
+
+  "arp_spoofing": {
+      "enable": true,
+      "detection_method": "time",
+      "static_ip_mac_table":
+      {
+        "192.168.1.1": "00:0c:29:3e:5f:5b",
+        "192.168.1.2": "11:3c:29:3e:5a:6b"
+      },
+      "suspicious_time_of_address_change_measured_in_hours": 0.5,
+      "enable_reactions": {
+        "block_ip": true,
+        "block_mac": true,
+        "block_interface": true,
+        "send_correct_arp_response": true
+      }
+  },
+
+  "vlan_hopping": {
+      "enable": true,
+      "allowed_vlan_ids": [],
+      "enable_reactions": {
+        "block_mac": true,
+        "block_interface": true
+      }
+  },
+
+  "cam_table_owerflow": {
+      "enable": true,
+      "max_new_mac_address": 15,
+      "max_new_ip_address": 15,
+      "enable_reactions": {
+        "block_mac": true,
+        "block_interface": true
+      }
+  }
+}
