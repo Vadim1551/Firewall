@@ -7,16 +7,15 @@ from datetime import datetime
 
 
 class Detect:
-    def __init__(self, path_to_log='', static_ip_mac_table=None, cam_table_owerflow=None,
-                 vlan_hopping=None, arp_and_mac_spoofing=None):
-        self.loger = Loger(path_to_log)
-        self.reaction = Reaction(static_ip_mac_table)
-        self.sender = Sender()
+    def __init__(self, path_to_log='', cam_table_owerflow=None, vlan_hopping=None, arp_and_mac_spoofing=None):
         self.ethertype_vlan = 0x8100
         self.current_arp_table = self.get_current_arp_table()
         self.cam_table_owerflow = cam_table_owerflow
         self.vlan_hopping = vlan_hopping
         self.arp_and_mac_spoofing = arp_and_mac_spoofing
+        self.loger = Loger(path_to_log)
+        self.reaction = Reaction(set(self.arp_and_mac_spoofing['static_ip_mac_table']))
+        self.sender = Sender()
 
     def get_current_arp_table(self):
         # Запускаем команду для получения таблицы соседей по IP
@@ -125,7 +124,7 @@ class Detect:
                     self.loger.log_message(message)
 
             if list_blocked:
-                for interface in list_blocked:
+                for interface in arp_and_mac_buffer:
                     arp_and_mac_buffer[interface]['mac'].clear()
                     arp_and_mac_buffer[interface]['arp'].clear()
 

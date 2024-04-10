@@ -26,11 +26,10 @@ class Reaction:
         else:
             return True
 
-    @staticmethod
-    def send_correct_arp(ip, static_ip_mac_table):
+    def send_correct_arp(ip):
         # Отправка корректного ARP ответа для восстановления правильной ассоциации
         # в ARP таблицах в сети
-        correct_packet = ARP(op=2, psrc=ip, hwsrc=static_ip_mac_table[ip])
+        correct_packet = ARP(op=2, psrc=ip, hwsrc=self.static_ip_mac_table[ip])
         send(correct_packet, verbose=0)
 
     @staticmethod

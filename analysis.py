@@ -9,18 +9,18 @@ import time
 class Analysis:
     def __init__(self):
         self.detect = None
-        self.interfaces = set()
-        self.current_blocked_interfaces = set()
+        self.interfaces = None
+        self.current_blocked_interfaces = None
         self.enable_arp_spoof_detect = False
         self.apr_spoof_method = ''
         self.enable_cam_table_owerflow_detect = False
         self.enable_vlan_hopping_detect = False
-        self.arp_and_mac_buffer = {interface: {'mac': set(), 'arp': set()} for interface in self.interfaces}
+        self.arp_and_mac_buffer = None
 
     def load_config(self):
         with open("config.json", 'r') as file:
             conf = json.load(file)
-            self.detect = Detect(conf['path_to_log'], set(conf['static_ip_mac_table']), conf['cam_table_owerflow'],
+            self.detect = Detect(conf['path_to_log'], conf['cam_table_owerflow'],
                                  conf['vlan_hopping'], conf['arp_spoofing'])
             self.interfaces = set(conf['listening_interfaces'])
             self.current_blocked_interfaces = set(conf['blocked_interfaces'])
@@ -28,19 +28,14 @@ class Analysis:
             self.apr_spoof_method = conf['arp_spoofing']['detection_method']
             self.enable_cam_table_owerflow_detect = bool(conf['cam_table_owerflow']['enable'])
             self.enable_vlan_hopping_detect = bool(conf['vlan_hopping']['enable'])
+            self.arp_and_mac_buffer = {interface: {'mac': set(), 'arp': set()} for interface in self.interfaces}
 
     def periodic_analysis_count_mac(self):
         while True:
             list_blocked_interfaces, arp_mac_buf = self.detect.cam_or_arp_table_owerflow_detection(self.arp_and_mac_buffer)
             self.arp_and_mac_buffer = arp_mac_buf
-            self.current_blocked_interfaces.union(list_blocked_interfaces)
-            list_interfaces = self.detect.cam_or_arp_table_owerflow_detection(self.arp_and_mac_buffer)
-            if list_interfaces:
-                for interface in list_interfaces:
-                    self.current_blocked_interfaces.add(interface)
-                    self.arp_and_mac_buffer[interface]['mac'].clear()
-                    self.arp_and_mac_buffer[interface]['arp'].clear()
-            time.sleep(0.5)
+            self.current_blocked_interfaces = self.current_blocked_interfaces.union(list_blocked_interfaces)
+            time.sleep(0.35)
 
     def determining_the_package_type(self, packet):
         try:
@@ -92,4 +87,4 @@ class Analysis:
                 timer.start()
 
             print('Start')
-            sniff(prn=self.determining_the_package_type, store=False, iface=self.interfaces)
+            sniff(prn=self.determining_the_package_type, store=False, iface=list(self.interfaces))
