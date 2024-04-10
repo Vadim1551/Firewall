@@ -48,15 +48,17 @@ class Reaction:
         os.system(block_incoming)
 
     def block_interface(self, interface):
+        commands = []
         block_incoming = f"sudo ebtables -A INPUT -i {interface} -j DROP"
         block_forwarding = f"sudo ebtables -A FORWARD -i {interface} -j DROP"
         block_outgoing = f"sudo ebtables -A OUTPUT -o {interface} -j DROP"
         if self.rule_not_in_table(block_incoming[14:], self.rules[1]):
-            os.system(block_incoming)
-            print('block_inc')
+            block_incoming = f"sudo ebtables -A INPUT -i {interface} -j DROP"
+            commands.append(block_incoming)
         if self.rule_not_in_table(block_forwarding[14:], self.rules[1]):
-            os.system(block_forwarding)
-            print("BLOCK forw")
+            block_forwarding = f"sudo ebtables -A FORWARD -i {interface} -j DROP"
+            commands.append(block_forwarding)
         if self.rule_not_in_table(block_outgoing[14:], self.rules[1]):
-            os.system(block_outgoing)
-            print("BLOCK out")
+            block_outgoing = f"sudo ebtables -A OUTPUT -o {interface} -j DROP"
+            commands.append(block_outgoing)
+        os.system(" && ".join(commands))

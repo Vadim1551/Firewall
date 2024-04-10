@@ -24,6 +24,7 @@ class Detect:
         except subprocess.CalledProcessError as e:
             self.loger.log_message(f"Ошибка при выполнении команды ip neigh show: {e}")
             self.current_arp_table = None
+            print(e)
             return
 
         # Регулярное выражение для поиска IP и MAC адресов в выводе команды
@@ -113,8 +114,6 @@ class Detect:
                 ):
                     message = f"[WARNING] Обнаружена атака CAM_table_owerflow на интерфейсе {key}"
                     print(message)
-                    self.loger.log_message(message)
-                    #self.sender.send_message_to_owner(message)
                     if self.cam_table_owerflow['enable_reactions']['block_interface']:
                         print('Start blocking')
                         print(f'Interface {key}')
@@ -122,6 +121,7 @@ class Detect:
                         self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
                         list_blocked.add(key)
                     self.loger.log_message(message)
+                    self.sender.send_message_to_owner(message)
 
             if list_blocked:
                 for interface in arp_and_mac_buffer:
