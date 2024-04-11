@@ -36,8 +36,9 @@ class Analysis:
         while True:
             list_blocked_interfaces, arp_mac_buf = self.detect.cam_or_arp_table_overflow_detection(self.arp_and_mac_buffer)
             self.arp_and_mac_buffer = arp_mac_buf
-            self.current_blocked_interfaces = self.current_blocked_interfaces.union(list_blocked_interfaces)
             if list_blocked_interfaces:
+                self.current_blocked_interfaces = self.current_blocked_interfaces.union(list_blocked_interfaces)
+                self.interfaces = self.interfaces - self.current_blocked_interfaces
                 self.restart_required = True
             time.sleep(0.35)
 
@@ -97,6 +98,7 @@ class Analysis:
 
     def _start_sniffers(self):
         for iface in list(self.interfaces):
+            print(f"Start sniffer on {iface}")
             sniffer = AsyncSniffer(iface=iface, prn=self.determining_the_package_type, store=False)
             sniffer.start()
             self.sniffers.append(sniffer)
@@ -115,7 +117,6 @@ class Analysis:
                 # Проверяем, требуется ли перезапуск каждые n секунд
                 while not self.restart_required:
                     time.sleep(1)
-
                 self._stop_sniffers()
 
         except KeyboardInterrupt:
