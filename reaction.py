@@ -26,9 +26,9 @@ class Reaction:
         else:
             return True
 
-    def send_correct_arp(ip):
+    def send_correct_arp(self, ip):
         # Отправка корректного ARP ответа для восстановления правильной ассоциации
-        # в ARP таблицах в сети
+        # в ARP таблицах в сетиgit
         correct_packet = ARP(op=2, psrc=ip, hwsrc=self.static_ip_mac_table[ip])
         send(correct_packet, verbose=0)
 

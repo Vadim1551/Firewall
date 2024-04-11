@@ -9,7 +9,8 @@ class Sender:
     def __init__(self):
         load_dotenv()
 
-    def send_message_to_owner(self, text):
+    @staticmethod
+    def send_message_to_owner(text):
         login = os.getenv("LOGIN")
         password = os.getenv("PASSWORD")
         print(login, password)
