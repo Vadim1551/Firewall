@@ -14,7 +14,7 @@ class Detect:
         self.vlan_hopping = vlan_hopping
         self.arp_and_mac_spoofing = arp_and_mac_spoofing
         self.loger = Loger(path_to_log)
-        self.reaction = Reaction(set(self.arp_and_mac_spoofing['static_ip_mac_table']))
+        self.reaction = Reaction()
         self.sender = Sender()
 
     def get_current_arp_table(self):
@@ -86,7 +86,7 @@ class Detect:
                     self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
 
                 if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
-                    self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
+                    self.reaction.send_correct_arp(ip, set(self.arp_and_mac_spoofing['static_ip_mac_table']))
                     self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, packet_interface):

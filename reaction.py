@@ -5,9 +5,8 @@ import subprocess
 
 
 class Reaction:
-    def __init__(self, static_ip_mac_table):
+    def __init__(self):
         self.rules = self.get_ip_eb_tables()
-        self.static_ip_mac_table = static_ip_mac_table
 
     @staticmethod
     def get_ip_eb_tables():
@@ -26,10 +25,11 @@ class Reaction:
         else:
             return True
 
-    def send_correct_arp(self, ip):
+    @staticmethod
+    def send_correct_arp(ip, ip_mac_table):
         # Отправка корректного ARP ответа для восстановления правильной ассоциации
-        # в ARP таблицах в сетиgit
-        correct_packet = ARP(op=2, psrc=ip, hwsrc=self.static_ip_mac_table[ip])
+        # в ARP таблицах в сети
+        correct_packet = ARP(op=2, psrc=ip, hwsrc=ip_mac_table[ip])
         send(correct_packet, verbose=0)
 
     @staticmethod
