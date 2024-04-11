@@ -32,7 +32,7 @@ class Analysis:
 
     def periodic_analysis_count_mac(self):
         while True:
-            list_blocked_interfaces, arp_mac_buf = self.detect.cam_or_arp_table_owerflow_detection(self.arp_and_mac_buffer)
+            list_blocked_interfaces, arp_mac_buf = self.detect.cam_or_arp_table_overflow_detection(self.arp_and_mac_buffer)
             self.arp_and_mac_buffer = arp_mac_buf
             self.current_blocked_interfaces = self.current_blocked_interfaces.union(list_blocked_interfaces)
             time.sleep(0.35)
