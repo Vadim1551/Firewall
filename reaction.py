@@ -49,7 +49,7 @@ class Reaction:
 
     def block_interface(self, interface):
         commands = []
-        block_incoming = f"sudo ebtables -A INPUT -i {interface} -j DROP && sudo iptables -A INPUT -i {interface} -j DROP"
+        block_incoming = f"sudo ebtables -A INPUT -i {interface} -j DROP"
         block_forwarding = f"sudo ebtables -A FORWARD -i {interface} -j DROP"
         block_outgoing = f"sudo ebtables -A OUTPUT -o {interface} -j DROP"
 
