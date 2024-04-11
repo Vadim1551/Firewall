@@ -129,8 +129,6 @@ class Detect:
                         self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
                         list_blocked.add(key)
 
-
-
             if list_blocked:
                 for interface in arp_and_mac_buffer:
                     arp_and_mac_buffer[interface]['mac'].clear()

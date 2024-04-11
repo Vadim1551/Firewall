@@ -16,6 +16,8 @@ class Analysis:
         self.enable_cam_table_overflow_detect = False
         self.enable_vlan_hopping_detect = False
         self.arp_and_mac_buffer = None
+        self.restart_required = False
+        self.sniffers = []
 
     def load_config(self):
         with open("config.json", 'r') as file:
@@ -35,6 +37,8 @@ class Analysis:
             list_blocked_interfaces, arp_mac_buf = self.detect.cam_or_arp_table_overflow_detection(self.arp_and_mac_buffer)
             self.arp_and_mac_buffer = arp_mac_buf
             self.current_blocked_interfaces = self.current_blocked_interfaces.union(list_blocked_interfaces)
+            if list_blocked_interfaces:
+                self.restart_required = True
             time.sleep(0.35)
 
     def determining_the_package_type(self, packet):
@@ -86,5 +90,34 @@ class Analysis:
                 timer.daemon = True
                 timer.start()
 
-            print('Start')
-            sniff(prn=self.determining_the_package_type, store=False, iface=list(self.interfaces))
+            #print('Start')
+            #sniff(prn=self.determining_the_package_type, store=False, iface=list(self.interfaces))
+            #print('End')
+            self.start_sniffing()
+
+    def _start_sniffers(self):
+        for iface in list(self.interfaces):
+            sniffer = AsyncSniffer(iface=iface, prn=self.determining_the_package_type, store=False)
+            sniffer.start()
+            self.sniffers.append(sniffer)
+
+    def _stop_sniffers(self):
+        for sniffer in self.sniffers:
+            sniffer.stop()
+        self.sniffers.clear()
+
+    def start_sniffing(self):
+        try:
+            while True:
+                self.restart_required = False
+                self._start_sniffers()
+
+                # Проверяем, требуется ли перезапуск каждые n секунд
+                while not self.restart_required:
+                    time.sleep(1)
+
+                self._stop_sniffers()
+
+        except KeyboardInterrupt:
+            self._stop_sniffers()
+            print("Sniffing stopped.")
