@@ -116,7 +116,7 @@ class Detect:
                         len(value['arp']) > self.cam_table_overflow['max_new_ip_address']
                 ):
 
-                    message = f"[WARNING] Обнаружена атака CAM_table_owerflow на интерфейсе {key}"
+                    message = f"[WARNING] Обнаружена атака CAM_table_overflow на интерфейсе {key}"
                     print(message)
 
                     self.executor.submit(self.loger.log_message, message)
@@ -128,6 +128,8 @@ class Detect:
                         self.reaction.block_interface(key)
                         self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
                         list_blocked.add(key)
+
+
 
             if list_blocked:
                 for interface in arp_and_mac_buffer:

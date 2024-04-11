@@ -26,3 +26,4 @@ class Sender:
                 s.sendmail(msg['From'], msg['To'], msg.as_string())
         except Exception as ex:
             print(ex)
+
