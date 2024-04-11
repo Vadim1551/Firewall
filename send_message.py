@@ -12,6 +12,7 @@ class Sender:
     def send_message_to_owner(self, text):
         login = os.getenv("LOGIN")
         password = os.getenv("PASSWORD")
+        print(login, password)
         msg = MIMEText(f'{text}', 'plain', 'utf-8')
         msg['Subject'] = Header('Важно!!', 'utf-8')
         msg['From'] = login
