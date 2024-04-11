@@ -31,7 +31,7 @@
       }
   },
 
-  "cam_table_owerflow": {
+  "cam_table_overflow": {
       "enable": true,
       "max_new_mac_address": 15,
       "max_new_ip_address": 15,

@@ -13,20 +13,20 @@ class Analysis:
         self.current_blocked_interfaces = None
         self.enable_arp_spoof_detect = False
         self.apr_spoof_method = ''
-        self.enable_cam_table_owerflow_detect = False
+        self.enable_cam_table_overflow_detect = False
         self.enable_vlan_hopping_detect = False
         self.arp_and_mac_buffer = None
 
     def load_config(self):
         with open("config.json", 'r') as file:
             conf = json.load(file)
-            self.detect = Detect(conf['path_to_log'], conf['cam_table_owerflow'],
+            self.detect = Detect(conf['path_to_log'], conf['cam_table_overflow'],
                                  conf['vlan_hopping'], conf['arp_spoofing'])
             self.interfaces = set(conf['listening_interfaces'])
             self.current_blocked_interfaces = set(conf['blocked_interfaces'])
             self.enable_arp_spoof_detect = bool(conf['arp_spoofing']['enable'])
             self.apr_spoof_method = conf['arp_spoofing']['detection_method']
-            self.enable_cam_table_owerflow_detect = bool(conf['cam_table_owerflow']['enable'])
+            self.enable_cam_table_overflow_detect = bool(conf['cam_table_overflow']['enable'])
             self.enable_vlan_hopping_detect = bool(conf['vlan_hopping']['enable'])
             self.arp_and_mac_buffer = {interface: {'mac': set(), 'arp': set()} for interface in self.interfaces}
 
@@ -41,7 +41,7 @@ class Analysis:
         try:
             packet_interface = packet.sniffed_on
             if packet_interface not in self.current_blocked_interfaces:
-                if self.enable_cam_table_owerflow_detect:
+                if self.enable_cam_table_overflow_detect:
                     if packet.haslayer(Ether):
                         mac_src = packet[Ether].src
                         self.arp_and_mac_buffer[packet_interface]['mac'].add(mac_src)
@@ -75,12 +75,12 @@ class Analysis:
 
         if any([self.enable_arp_spoof_detect,
                 self.enable_vlan_hopping_detect,
-                self.enable_cam_table_owerflow_detect]):
+                self.enable_cam_table_overflow_detect]):
 
             if self.current_blocked_interfaces:
                 self.interfaces = [inter for inter in self.interfaces if inter not in self.current_blocked_interfaces]
 
-            if self.enable_cam_table_owerflow_detect:
+            if self.enable_cam_table_overflow_detect:
 
                 timer = threading.Thread(target=self.periodic_analysis_count_mac)
                 timer.daemon = True

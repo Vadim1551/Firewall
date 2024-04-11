@@ -1,5 +1,6 @@
 import subprocess
 import re
+import os
 from send_message import Sender
 from reaction import Reaction
 from log import Loger
@@ -7,10 +8,10 @@ from datetime import datetime
 
 
 class Detect:
-    def __init__(self, path_to_log='', cam_table_owerflow=None, vlan_hopping=None, arp_and_mac_spoofing=None):
+    def __init__(self, path_to_log='', cam_table_overflow=None, vlan_hopping=None, arp_and_mac_spoofing=None):
         self.ethertype_vlan = 0x8100
         self.current_arp_table = self.get_current_arp_table()
-        self.cam_table_owerflow = cam_table_owerflow
+        self.cam_table_overflow = cam_table_overflow
         self.vlan_hopping = vlan_hopping
         self.arp_and_mac_spoofing = arp_and_mac_spoofing
         self.loger = Loger(path_to_log)
@@ -23,15 +24,15 @@ class Detect:
             output = subprocess.check_output(["ip", "neigh", "show"], text=True)
         except subprocess.CalledProcessError as e:
             self.loger.log_message(f"Ошибка при выполнении команды ip neigh show: {e}")
-            self.current_arp_table = None
             print(e)
-            return
+            return {}
 
         # Регулярное выражение для поиска IP и MAC адресов в выводе команды
         pattern = re.compile(r"(\d+\.\d+\.\d+\.\d+)\s+dev\s+\w+\s+lladdr\s+([\da-fA-F:]+)\s+\w+")
 
         # Ищем все совпадения в выводе команды ip neigh show
         matches = pattern.findall(output)
+
 
         ip_mac_mapping = {}
         current_local_time = datetime.now()
@@ -86,7 +87,7 @@ class Detect:
                     self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
 
                 if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
-                    self.reaction.send_correct_arp(ip, set(self.arp_and_mac_spoofing['static_ip_mac_table']))
+                    self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
                     self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, packet_interface):
@@ -109,12 +110,12 @@ class Detect:
         if arp_and_mac_buffer:
             for key, value in arp_and_mac_buffer.items():
                 if (
-                        len(value['mac']) > self.cam_table_owerflow['max_new_mac_address'] or
-                        len(value['arp']) > self.cam_table_owerflow['max_new_ip_address']
+                        len(value['mac']) > self.cam_table_overflow['max_new_mac_address'] or
+                        len(value['arp']) > self.cam_table_overflow['max_new_ip_address']
                 ):
                     message = f"[WARNING] Обнаружена атака CAM_table_owerflow на интерфейсе {key}"
                     print(message)
-                    if self.cam_table_owerflow['enable_reactions']['block_interface']:
+                    if self.cam_table_overflow['enable_reactions']['block_interface']:
                         print('Start blocking')
                         print(f'Interface {key}')
                         self.reaction.block_interface(key)
