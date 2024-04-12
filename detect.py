@@ -4,11 +4,15 @@ from send_message import Sender
 from reaction import Reaction
 from log import Loger
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
 
 
 class Detect:
-    def __init__(self, path_to_log='', cam_table_overflow=None, vlan_hopping=None, arp_and_mac_spoofing=None):
+    def __init__(self, path_to_log='',
+                 cam_table_overflow=None,
+                 vlan_hopping=None,
+                 arp_and_mac_spoofing=None,
+                 executor=None):
+
         self.ethertype_vlan = 0x8100
         self.current_arp_table = self.get_current_arp_table()
         self.cam_table_overflow = cam_table_overflow
@@ -17,7 +21,7 @@ class Detect:
         self.loger = Loger(path_to_log)
         self.reaction = Reaction()
         self.sender = Sender()
-        self.executor = ThreadPoolExecutor(max_workers=2)
+        self.executor = executor
 
     def get_current_arp_table(self):
         # Запускаем команду для получения таблицы соседей по IP
