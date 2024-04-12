@@ -81,7 +81,7 @@ class Detect:
         if ip in self.arp_and_mac_spoofing['static_ip_mac_table']:
             # Если MAC-адрес, ассоциированный с известным IP, не совпадает с доверенным...
             if mac != self.arp_and_mac_spoofing['static_ip_mac_table'][ip]:
-                with ThreadPoolExecutor(max_workers=3) as executor:
+                with ThreadPoolExecutor(max_workers=4) as executor:
                     message = f"[WARNING] Обнаружена ARP Spoofing атака! \
                     {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
                      на интерфейсе {packet_interface}"
@@ -120,7 +120,7 @@ class Detect:
                         len(value['mac']) > self.cam_table_overflow['max_new_mac_address'] or
                         len(value['arp']) > self.cam_table_overflow['max_new_ip_address']
                 ):
-                    with ThreadPoolExecutor(max_workers=3) as executor:
+                    with ThreadPoolExecutor(max_workers=4) as executor:
                         message = f"[WARNING] Обнаружена атака CAM_table_overflow на интерфейсе {key}"
                         print(message)
 
