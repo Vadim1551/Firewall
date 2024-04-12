@@ -114,7 +114,7 @@ class Analysis:
 
                 # Проверяем, требуется ли перезапуск каждые n секунд
                 while not self.restart_required:
-                    time.sleep(1)
+                    time.sleep(3)
                 self._stop_sniffers()
 
         except KeyboardInterrupt:

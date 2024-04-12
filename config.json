@@ -1,7 +1,7 @@
 {
   "path_to_log": "",
 
-  "listening_interfaces": ["eth0", "eth1"],
+  "listening_interfaces": ["eth1"],
 
   "blocked_interfaces": [],
 
