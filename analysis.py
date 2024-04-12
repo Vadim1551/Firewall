@@ -19,7 +19,7 @@ class Analysis:
         self.arp_and_mac_buffer = None
         self.restart_required = False
         self.sniffers = []
-        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.executor = ThreadPoolExecutor(max_workers=6)
 
     def load_config(self):
         with open("config.json", 'r') as file:
@@ -112,9 +112,9 @@ class Analysis:
 
     def start_sniffing(self):
         try:
-            while True:
-                self.restart_required = False
-                with self.executor:
+            with self.executor:
+                while True:
+                    self.restart_required = False
                     self._start_sniffers()
                     if self.enable_cam_table_overflow_detect:
                         self.executor.submit(self.periodic_analysis_count_mac)
@@ -122,7 +122,6 @@ class Analysis:
                     # Проверяем, требуется ли перезапуск каждые n секунд
                     while not self.restart_required:
                         time.sleep(1)
-                    self.executor.shutdown()
                     self._stop_sniffers()
 
         except KeyboardInterrupt:
