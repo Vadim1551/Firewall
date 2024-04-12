@@ -21,7 +21,7 @@ class Detect:
         self.loger = Loger(path_to_log)
         self.reaction = Reaction()
         self.sender = Sender()
-        self.executor = ThreadPoolExecutor(max_workers=4)
+        #self.executor = ThreadPoolExecutor(max_workers=4)
 
     def get_current_arp_table(self):
         # Запускаем команду для получения таблицы соседей по IP
@@ -81,34 +81,35 @@ class Detect:
         if ip in self.arp_and_mac_spoofing['static_ip_mac_table']:
             # Если MAC-адрес, ассоциированный с известным IP, не совпадает с доверенным...
             if mac != self.arp_and_mac_spoofing['static_ip_mac_table'][ip]:
-                message = f"[WARNING] Обнаружена ARP Spoofing атака! \
-                {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
-                 на интерфейсе {packet_interface}"
+                with ThreadPoolExecutor(max_workers=3) as executor:
+                    message = f"[WARNING] Обнаружена ARP Spoofing атака! \
+                    {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
+                     на интерфейсе {packet_interface}"
 
-                self.executor.submit(self.loger.log_message, message)
-                self.executor.submit(self.sender.send_message_to_owner, message)
+                    executor.submit(self.loger.log_message, message)
+                    executor.submit(self.sender.send_message_to_owner, message)
 
-                if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
-                    self.reaction.block_ip(ip)
-                    self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
+                    if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
+                        self.reaction.block_ip(ip)
+                        self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
 
-                if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
-                    self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
-                    self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
+                    if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
+                        self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
+                        self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, packet_interface):
 
         if vlan_id not in self.vlan_hopping['allowed_vlan_ids'] or packet_type != self.ethertype_vlan:
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                message = f"[WARNING] Обнаружена атака VLAN-hopping. \
+                Подозрительный VLAN ID: {vlan_id} на интерфейсе {packet_interface}"
 
-            message = f"[WARNING] Обнаружена атака VLAN-hopping. \
-            Подозрительный VLAN ID: {vlan_id} на интерфейсе {packet_interface}"
+                executor.submit(self.loger.log_message, message)
+                executor.submit(self.sender.send_message_to_owner, message)
 
-            self.executor.submit(self.loger.log_message, message)
-            self.executor.submit(self.sender.send_message_to_owner, message)
-
-            if self.vlan_hopping['enable_reactions']['block_mac']:
-                self.reaction.block_mac(src_mac)
-                self.loger.log_message(f"[+] Входящий трафик от MAC {src_mac} был заблокирован")
+                if self.vlan_hopping['enable_reactions']['block_mac']:
+                    self.reaction.block_mac(src_mac)
+                    self.loger.log_message(f"[+] Входящий трафик от MAC {src_mac} был заблокирован")
 
     def cam_or_arp_table_overflow_detection(self, arp_and_mac_buffer):
         # Очистить буфер после обработки
@@ -119,12 +120,12 @@ class Detect:
                         len(value['mac']) > self.cam_table_overflow['max_new_mac_address'] or
                         len(value['arp']) > self.cam_table_overflow['max_new_ip_address']
                 ):
-                    with self.executor:
+                    with ThreadPoolExecutor(max_workers=3) as executor:
                         message = f"[WARNING] Обнаружена атака CAM_table_overflow на интерфейсе {key}"
                         print(message)
 
-                        self.executor.submit(self.loger.log_message, message)
-                        self.executor.submit(self.sender.send_message_to_owner, message)
+                        executor.submit(self.loger.log_message, message)
+                        executor.submit(self.sender.send_message_to_owner, message)
 
                         if self.cam_table_overflow['enable_reactions']['block_interface']:
                             print('Start blocking')
