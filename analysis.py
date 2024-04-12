@@ -4,7 +4,6 @@ from scapy.layers.l2 import ARP
 from scapy.all import *
 import json
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 
 class Analysis:
@@ -19,13 +18,12 @@ class Analysis:
         self.arp_and_mac_buffer = None
         self.restart_required = False
         self.sniffers = []
-        self.executor = ThreadPoolExecutor(max_workers=6)
 
     def load_config(self):
         with open("config.json", 'r') as file:
             conf = json.load(file)
             self.detect = Detect(conf['path_to_log'], conf['cam_table_overflow'],
-                                 conf['vlan_hopping'], conf['arp_spoofing'], self.executor)
+                                 conf['vlan_hopping'], conf['arp_spoofing'])
             self.interfaces = set(conf['listening_interfaces'])
             self.current_blocked_interfaces = set(conf['blocked_interfaces'])
             self.enable_arp_spoof_detect = bool(conf['arp_spoofing']['enable'])
@@ -86,12 +84,10 @@ class Analysis:
             if self.current_blocked_interfaces:
                 self.interfaces = [inter for inter in self.interfaces if inter not in self.current_blocked_interfaces]
 
-
-            # if self.enable_cam_table_overflow_detect:
-            #     self.executor.submit(self.periodic_analysis_count_mac)
-                        # timer = threading.Thread(target=self.periodic_analysis_count_mac)
-                        # timer.daemon = True
-                        # timer.start()
+            if self.enable_cam_table_overflow_detect:
+                timer = threading.Thread(target=self.periodic_analysis_count_mac)
+                timer.daemon = True
+                timer.start()
 
             self.start_sniffing()
         else:
@@ -112,19 +108,15 @@ class Analysis:
 
     def start_sniffing(self):
         try:
-            with self.executor:
-                while True:
-                    self.restart_required = False
-                    self._start_sniffers()
-                    if self.enable_cam_table_overflow_detect:
-                        self.executor.submit(self.periodic_analysis_count_mac)
+            while True:
+                self.restart_required = False
+                self._start_sniffers()
 
-                    # Проверяем, требуется ли перезапуск каждые n секунд
-                    while not self.restart_required:
-                        time.sleep(1)
-                    self._stop_sniffers()
+                # Проверяем, требуется ли перезапуск каждые n секунд
+                while not self.restart_required:
+                    time.sleep(1)
+                self._stop_sniffers()
 
         except KeyboardInterrupt:
             self._stop_sniffers()
-            self.executor.shutdown()
             print("Sniffing stopped.")

@@ -1,5 +1,6 @@
 import subprocess
 import re
+from concurrent.futures import ThreadPoolExecutor
 from send_message import Sender
 from reaction import Reaction
 from log import Loger
@@ -10,8 +11,7 @@ class Detect:
     def __init__(self, path_to_log='',
                  cam_table_overflow=None,
                  vlan_hopping=None,
-                 arp_and_mac_spoofing=None,
-                 executor=None):
+                 arp_and_mac_spoofing=None):
 
         self.ethertype_vlan = 0x8100
         self.current_arp_table = self.get_current_arp_table()
@@ -21,7 +21,7 @@ class Detect:
         self.loger = Loger(path_to_log)
         self.reaction = Reaction()
         self.sender = Sender()
-        self.executor = executor
+        self.executor = ThreadPoolExecutor(max_workers=4)
 
     def get_current_arp_table(self):
         # Запускаем команду для получения таблицы соседей по IP
@@ -119,19 +119,19 @@ class Detect:
                         len(value['mac']) > self.cam_table_overflow['max_new_mac_address'] or
                         len(value['arp']) > self.cam_table_overflow['max_new_ip_address']
                 ):
+                    with self.executor:
+                        message = f"[WARNING] Обнаружена атака CAM_table_overflow на интерфейсе {key}"
+                        print(message)
 
-                    message = f"[WARNING] Обнаружена атака CAM_table_overflow на интерфейсе {key}"
-                    print(message)
+                        self.executor.submit(self.loger.log_message, message)
+                        self.executor.submit(self.sender.send_message_to_owner, message)
 
-                    self.executor.submit(self.loger.log_message, message)
-                    self.executor.submit(self.sender.send_message_to_owner, message)
-
-                    if self.cam_table_overflow['enable_reactions']['block_interface']:
-                        print('Start blocking')
-                        print(f'Interface {key}')
-                        self.reaction.block_interface(key)
-                        self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
-                        list_blocked.add(key)
+                        if self.cam_table_overflow['enable_reactions']['block_interface']:
+                            print('Start blocking')
+                            print(f'Interface {key}')
+                            self.reaction.block_interface(key)
+                            self.loger.log_message(f"[+] трафик с интерфейса {key} был заблокирован")
+                            list_blocked.add(key)
 
             if list_blocked:
                 for interface in arp_and_mac_buffer:
