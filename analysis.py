@@ -99,18 +99,18 @@ class Analysis:
             print(f"Start sniffer on {iface}")
             sniffer = AsyncSniffer(iface=iface, prn=self.determining_the_package_type, store=False)
             sniffer.start()
-            self.sniffers.append(sniffer)
+            self.sniffers.append((sniffer, iface))
 
     def _stop_blocked_sniffers(self):
         for sniffer in self.sniffers:
-            if sniffer.iface not in self.interfaces:
-                sniffer.stop()
+            if sniffer[1] not in self.interfaces:
+                sniffer[0].stop()
+                print(f"Stop sniffer on {sniffer[1]}")
                 self.sniffers.remove(sniffer)
-                print(f"Stop sniffer on {sniffer.iface}")
 
     def _stop_all_sniffers(self):
         for sniffer in self.sniffers:
-            sniffer.stop()
+            sniffer[0].stop()
             print("Stop all sniffers")
 
     def start_sniffing(self):
