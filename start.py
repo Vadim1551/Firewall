@@ -1,5 +1,5 @@
 from analysis import *
-from concurrent.futures import ThreadPoolExecutor
+
 
 def start():
     firewall = Analysis()

@@ -84,10 +84,10 @@ class Analysis:
             if self.current_blocked_interfaces:
                 self.interfaces = [inter for inter in self.interfaces if inter not in self.current_blocked_interfaces]
 
-            if self.enable_cam_table_overflow_detect:
-                timer = threading.Thread(target=self.periodic_analysis_count_mac)
-                timer.daemon = True
-                timer.start()
+            # if self.enable_cam_table_overflow_detect:
+            #     thread = threading.Thread(target=self.periodic_analysis_count_mac)
+            #     thread.daemon = True
+            #     thread.start()
 
             self.start_sniffing()
         else:
@@ -101,22 +101,34 @@ class Analysis:
             sniffer.start()
             self.sniffers.append(sniffer)
 
-    def _stop_sniffers(self):
+    def _stop_blocked_sniffers(self):
+        for sniffer in self.sniffers:
+            if sniffer.iface not in self.interfaces:
+                sniffer.stop()
+                self.sniffers.remove(sniffer)
+                print(f"Stop sniffer on {sniffer.iface}")
+
+    def _stop_all_sniffers(self):
         for sniffer in self.sniffers:
             sniffer.stop()
-        self.sniffers.clear()
+            print("Stop all sniffers")
 
     def start_sniffing(self):
         try:
+            self._start_sniffers()
+
+            if self.enable_cam_table_overflow_detect:
+                thread = threading.Thread(target=self.periodic_analysis_count_mac)
+                thread.daemon = True
+                thread.start()
+
             while True:
                 self.restart_required = False
-                self._start_sniffers()
 
                 # Проверяем, требуется ли перезапуск каждые n секунд
                 while not self.restart_required:
-                    time.sleep(3)
-                self._stop_sniffers()
+                    time.sleep(2)
+                self._stop_blocked_sniffers()
 
         except KeyboardInterrupt:
-            self._stop_sniffers()
-            print("Sniffing stopped.")
+            self._stop_all_sniffers()

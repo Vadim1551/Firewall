@@ -120,7 +120,6 @@ class Detect:
                         len(value['mac']) > self.cam_table_overflow['max_new_mac_address'] or
                         len(value['arp']) > self.cam_table_overflow['max_new_ip_address']
                 ):
-                    #with self.executor:
                     message = f"[WARNING] Обнаружена атака CAM_table_overflow на интерфейсе {key}"
                     print(message)
 
