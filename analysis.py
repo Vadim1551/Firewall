@@ -66,7 +66,9 @@ class Analysis:
                                         self.blocked_ip.add(ip)
 
                                 elif self.apr_spoof_method == 'static_table':
-                                    self.detect.arp_mac_spoof_detection_static(ip, mac, packet_interface)
+                                    ip = self.detect.arp_mac_spoof_detection_static(ip, mac, packet_interface)
+                                    if ip:
+                                        self.blocked_ip.add(ip)
 
                 if self.enable_vlan_hopping_detect:
                     if packet.haslayer(Dot1Q):
