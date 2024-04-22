@@ -1,7 +1,7 @@
 {
   "path_to_log": "",
 
-  "listening_interfaces": ["eth1"],
+  "listening_interfaces": ["eth0"],
 
   "blocked_interfaces": [],
 
@@ -13,17 +13,17 @@
         "192.168.1.1": "00:0c:29:3e:5f:5b",
         "192.168.1.2": "11:3c:29:3e:5a:6b"
       },
-      "suspicious_time_of_address_change_measured_in_hours": 0.5,
+      "suspicious_time_of_address_change_measured_in_hours": 0.01,
       "enable_reactions": {
         "block_ip": true,
-        "block_mac": true,
-        "block_interface": true,
-        "send_correct_arp_response": true
+        "block_mac": false,
+        "block_interface": false,
+        "send_correct_arp_response": false
       }
   },
 
   "vlan_hopping": {
-      "enable": true,
+      "enable": false,
       "allowed_vlan_ids": [],
       "enable_reactions": {
         "block_mac": true,
@@ -32,7 +32,7 @@
   },
 
   "cam_table_overflow": {
-      "enable": true,
+      "enable": false,
       "max_new_mac_address": 15,
       "max_new_ip_address": 15,
       "enable_reactions": {

@@ -13,6 +13,8 @@ class Reaction:
         try:
             ip_rules = subprocess.check_output("iptables-save", shell=True).decode()
             eb_rules = subprocess.check_output("ebtables-save", shell=True).decode()
+            print(eb_rules)
+            print(type(eb_rules))
             return [ip_rules, eb_rules]
 
         except subprocess.CalledProcessError:
@@ -32,20 +34,31 @@ class Reaction:
         correct_packet = ARP(op=2, psrc=ip, hwsrc=ip_mac_table[ip])
         send(correct_packet, verbose=0)
 
-    @staticmethod
-    def block_ip(ip_address):
-        # Блокируем входящий трафик от указанного IP
+    def block_ip(self, ip_address):
+        commands = []
         block_incoming = f"sudo iptables -A INPUT -s {ip_address} -j DROP"
-        os.system(block_incoming)
-
-        # Блокируем исходящий трафик к указанному IP
         block_outgoing = f"sudo iptables -A OUTPUT -d {ip_address} -j DROP"
-        os.system(block_outgoing)
 
-    @staticmethod
-    def block_mac(src_mac):
+        if self.rule_not_in_table(block_incoming[14:], self.rules[1]):
+            commands.append(block_incoming)
+        if self.rule_not_in_table(block_outgoing[14:], self.rules[1]):
+            commands.append(block_outgoing)
+        os.system(" && ".join(commands))
+        self.rules[1] += f"\n{block_incoming[14:]}"
+        self.rules[1] += f"\n{block_outgoing[14:]}"
+
+
+    def block_mac(self, src_mac):
+        commands = []
         block_incoming = f"sudo iptables -A INPUT -m mac --mac-source {src_mac} -j DROP"
-        os.system(block_incoming)
+        block_outgoing = f"sudo iptables -A OUTPUT -m mac --mac-source {src_mac} -j DROP"
+        if self.rule_not_in_table(block_incoming[14:], self.rules[1]):
+            commands.append(block_incoming)
+        if self.rule_not_in_table(block_outgoing[14:], self.rules[1]):
+            commands.append(block_outgoing)
+        os.system(" && ".join(commands))
+        self.rules[1] += f"\n{block_incoming[14:]}"
+        self.rules[1] += f"\n{block_outgoing[14:]}"
 
     def block_interface(self, interface):
         commands = []

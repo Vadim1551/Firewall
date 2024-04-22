@@ -49,21 +49,24 @@ class Detect:
 
     def arp_mac_spoof_detection_time(self, ip, mac, packet_interface):
         current_local_time = datetime.now()
-
+        print(ip, mac, current_local_time)
         if ip in self.current_arp_table:
+            print("IP IN self table")
             last_mac, last_time = self.current_arp_table[ip]
+            print(f"{last_mac} {last_time}")
             time_difference = (current_local_time - last_time).total_seconds() / 3600
-
+            print(time_difference)
             # Проверяем, изменился ли MAC-адрес и произошло ли изменение в пределах порога времени
             if last_mac != mac and time_difference < self.arp_and_mac_spoofing['suspicious_time_of_address_change_measured_in_hours']:
                 message = f"[WARNING] Обнаружена ARP Spoofing атака! \
                 {ip} изменил MAC адрес с {last_mac} на {mac}, \
                 менее чем за {self.arp_and_mac_spoofing['suspicious_time_of_address_change_measured_in_hours']} \
                 на интерфейсе {packet_interface}"
+                print(message)
 
-                self.loger.log_message(message)
+                self.executor.submit(self.loger.log_message(message))
 
-                self.sender.send_message_to_owner(message)  # Додумать отправку сообщения
+                self.executor.submit(self.sender.send_message_to_owner(message))
 
                 if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
                     self.reaction.block_ip(ip)
@@ -73,6 +76,8 @@ class Detect:
                     correct_arp = {ip: mac for ip, (mac, _) in self.current_arp_table.items()}
                     self.reaction.send_correct_arp(ip, correct_arp)
                     self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
+            else:
+                self.current_arp_table[ip] = (mac, current_local_time)
         else:
             self.current_arp_table[ip] = (mac, current_local_time)
 
