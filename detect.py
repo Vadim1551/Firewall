@@ -86,25 +86,30 @@ class Detect:
         return block_ip
 
     def arp_mac_spoof_detection_static(self, ip, mac, packet_interface):
+
+        block_ip = ''
         # Проверка на атаку ARP spoofing
         if ip in self.arp_and_mac_spoofing['static_ip_mac_table']:
             # Если MAC-адрес, ассоциированный с известным IP, не совпадает с доверенным...
             if mac != self.arp_and_mac_spoofing['static_ip_mac_table'][ip]:
-                with ThreadPoolExecutor(max_workers=4) as executor:
-                    message = f"[WARNING] Обнаружена ARP Spoofing атака! \
-                    {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
-                     на интерфейсе {packet_interface}"
 
-                    executor.submit(self.loger.log_message, message)
-                    executor.submit(self.sender.send_message_to_owner, message)
+                message = f"[WARNING] Обнаружена ARP Spoofing атака! \
+                {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
+                 на интерфейсе {packet_interface}"
+                print(message)
+                self.executor.submit(self.loger.log_message, message)
+                self.executor.submit(self.sender.send_message_to_owner, message)
 
-                    if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
-                        self.reaction.block_ip(ip)
-                        self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
+                if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
+                    self.reaction.block_ip(ip)
+                    self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
+                    block_ip = ip
 
-                    if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
-                        self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
-                        self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
+                if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
+                    self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
+                    self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
+
+        return block_ip
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, packet_interface):
 

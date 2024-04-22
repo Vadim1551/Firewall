@@ -10,8 +10,9 @@
       "detection_method": "time",
       "static_ip_mac_table":
       {
-        "192.168.1.1": "00:0c:29:3e:5f:5b",
-        "192.168.1.2": "11:3c:29:3e:5a:6b"
+        "192.168.1.1": "50:1b:97:00:06:01",
+        "192.168.1.106": "50:54:6b:00:09:00",
+        "192.168.1.250": "aa:bb:cc:80:01:00"
       },
       "suspicious_time_of_address_change_measured_in_hours": 0.01,
       "enable_reactions": {
