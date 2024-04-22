@@ -47,7 +47,6 @@ class Reaction:
         self.rules[1] += f"\n{block_incoming[14:]}"
         self.rules[1] += f"\n{block_outgoing[14:]}"
 
-
     def block_mac(self, src_mac):
         commands = []
         block_incoming = f"sudo iptables -A INPUT -m mac --mac-source {src_mac} -j DROP"

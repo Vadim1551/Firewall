@@ -49,6 +49,7 @@ class Detect:
 
     def arp_mac_spoof_detection_time(self, ip, mac, packet_interface):
         current_local_time = datetime.now()
+        block_ip = ""
         print(ip, mac, current_local_time)
         if ip in self.current_arp_table:
             print("IP IN self table")
@@ -71,6 +72,7 @@ class Detect:
                 if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
                     self.reaction.block_ip(ip)
                     self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
+                    block_ip = ip
 
                 if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
                     correct_arp = {ip: mac for ip, (mac, _) in self.current_arp_table.items()}
@@ -80,6 +82,8 @@ class Detect:
                 self.current_arp_table[ip] = (mac, current_local_time)
         else:
             self.current_arp_table[ip] = (mac, current_local_time)
+
+        return block_ip
 
     def arp_mac_spoof_detection_static(self, ip, mac, packet_interface):
         # Проверка на атаку ARP spoofing
