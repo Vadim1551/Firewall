@@ -108,7 +108,8 @@ class Detect:
                 if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
                     self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
                     self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
-
+        else:
+            self.arp_and_mac_spoofing[ip] = mac
         return block_ip
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, packet_interface):
