@@ -5,6 +5,10 @@
 
   "blocked_interfaces": [],
 
+  "blocked_macs": [],
+
+  "blocked_ips": [],
+
   "arp_spoofing": {
       "enable": true,
       "detection_method": "time",
