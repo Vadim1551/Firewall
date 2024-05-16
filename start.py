@@ -1,6 +1,5 @@
 from analysis import *
 
-
 def start():
     firewall = Analysis()
     firewall.start_analysis()
