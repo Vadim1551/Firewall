@@ -112,9 +112,9 @@ class Detect:
             self.arp_and_mac_spoofing[ip] = mac
         return block_mac
 
-    def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, packet_interface):
+    def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, second_layer, packet_interface):
 
-        if vlan_id not in self.vlan_hopping['allowed_vlan_ids'] or packet_type != self.ethertype_vlan:
+        if vlan_id not in self.vlan_hopping['allowed_vlan_ids'] or packet_type != self.ethertype_vlan or second_layer != 0:
             with ThreadPoolExecutor(max_workers=3) as executor:
                 message = f"[WARNING] Обнаружена атака VLAN-hopping. \
                 Подозрительный VLAN ID: {vlan_id} на интерфейсе {packet_interface}"

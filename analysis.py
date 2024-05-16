@@ -75,7 +75,8 @@ class Analysis:
                         vlan_id = packet[Dot1Q].vlan
                         src_mac = packet[Ether].src
                         packet_type = packet[Ether].type
-                        self.detect.vlan_hopping_detection(src_mac, vlan_id, packet_type, packet_interface)
+                        second_layer = packet[Dot1Q:2]
+                        self.detect.vlan_hopping_detection(src_mac, vlan_id, packet_type, second_layer, packet_interface)
 
         except Exception as e:
             print(f"An error occurred: {e}")
