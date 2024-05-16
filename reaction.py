@@ -49,8 +49,8 @@ class Reaction:
 
     def block_mac(self, src_mac):
         commands = []
-        block_incoming = f"sudo iptables -A INPUT -m mac --mac-source {src_mac} -j DROP"
-        block_outgoing = f"sudo iptables -A OUTPUT -m mac --mac-source {src_mac} -j DROP"
+        block_incoming = f"sudo ebtables -A INPUT -s {src_mac} -j DROP"
+        block_outgoing = f"sudo ebtables -A OUTPUT -d {src_mac} -j DROP"
         if self.rule_not_in_table(block_incoming[14:], self.rules[1]):
             commands.append(block_incoming)
         if self.rule_not_in_table(block_outgoing[14:], self.rules[1]):

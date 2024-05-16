@@ -18,7 +18,7 @@ class Analysis:
         self.arp_and_mac_buffer = None
         self.restart_required = False
         self.sniffers = []
-        self.blocked_ip = set()
+        self.blocked_mac = set()
 
     def load_config(self):
         with open("config.json", 'r') as file:
@@ -59,16 +59,16 @@ class Analysis:
                             ip = packet[ARP].psrc
                             mac = packet[ARP].hwsrc
                             self.arp_and_mac_buffer[packet_interface]['arp'].add(ip)
-                            if ip not in self.blocked_ip:
+                            if ip not in self.blocked_mac:
                                 if self.apr_spoof_method == 'time':
                                     ip = self.detect.arp_mac_spoof_detection_time(ip, mac, packet_interface)
                                     if ip:
-                                        self.blocked_ip.add(ip)
+                                        self.blocked_mac.add(mac)
 
                                 elif self.apr_spoof_method == 'static_table':
                                     ip = self.detect.arp_mac_spoof_detection_static(ip, mac, packet_interface)
                                     if ip:
-                                        self.blocked_ip.add(ip)
+                                        self.blocked_mac.add(mac)
 
                 if self.enable_vlan_hopping_detect:
                     if packet.haslayer(Dot1Q):
