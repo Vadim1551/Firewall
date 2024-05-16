@@ -138,18 +138,26 @@ class Detect:
         return block_mac, block_ip, block_interface
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, second_layer, packet_interface):
-
+        block_mac = ''
+        block_interface = ''
         if vlan_id not in self.vlan_hopping['allowed_vlan_ids'] or packet_type != self.ethertype_vlan or second_layer != 0:
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                message = f"[WARNING] Обнаружена атака VLAN-hopping. \
-                Подозрительный VLAN ID: {vlan_id} на интерфейсе {packet_interface}"
+            message = f"[WARNING] Обнаружена атака VLAN-hopping. \
+            Подозрительный VLAN ID: {vlan_id} на интерфейсе {packet_interface}"
 
-                executor.submit(self.loger.log_message, message)
-                executor.submit(self.sender.send_message_to_owner, message)
+            self.executor.submit(self.loger.log_message, message)
+            self.executor.submit(self.sender.send_message_to_owner, message)
 
-                if self.vlan_hopping['enable_reactions']['block_mac']:
-                    self.reaction.block_mac(src_mac)
-                    self.loger.log_message(f"[+] Входящий трафик от MAC {src_mac} был заблокирован")
+            if self.vlan_hopping['enable_reactions']['block_mac']:
+                self.reaction.block_mac(src_mac)
+                self.loger.log_message(f"[+] Входящий трафик от MAC {src_mac} был заблокирован")
+                block_mac = src_mac
+
+            if self.vlan_hopping['enable_reactions']['block_interface']:
+                self.reaction.block_interface(packet_interface)
+                self.loger.log_message(f"[+] трафик с интерфейса {packet_interface} был заблокирован")
+                block_interface = packet_interface
+
+        return block_mac, block_interface
 
     def cam_or_arp_table_overflow_detection(self, arp_and_mac_buffer):
         # Очистить буфер после обработки

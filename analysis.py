@@ -84,7 +84,14 @@ class Analysis:
                         src_mac = packet[Ether].src
                         packet_type = packet[Ether].type
                         second_layer = packet[Dot1Q:2]
-                        self.detect.vlan_hopping_detection(src_mac, vlan_id, packet_type, second_layer, packet_interface)
+                        if src_mac not in self.blocked_mac:
+                            mac_ban, interface_ban = self.detect.vlan_hopping_detection(src_mac, vlan_id, packet_type, second_layer, packet_interface)
+                            if mac_ban:
+                                self.blocked_mac.add(src_mac)
+                            if interface_ban:
+                                self.current_blocked_interfaces.add(interface_ban)
+                                self.interfaces = self.interfaces - self.current_blocked_interfaces
+                                self.restart_required = True
 
         except Exception as e:
             print(f"An error occurred: {e}")
