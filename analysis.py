@@ -19,6 +19,7 @@ class Analysis:
         self.restart_required = False
         self.sniffers = []
         self.blocked_mac = set()
+        self.blocked_ip = set()
 
     def load_config(self):
         with open("config.json", 'r') as file:
@@ -59,16 +60,23 @@ class Analysis:
                             ip = packet[ARP].psrc
                             mac = packet[ARP].hwsrc
                             self.arp_and_mac_buffer[packet_interface]['arp'].add(ip)
-                            if ip not in self.blocked_mac:
+                            if ip not in self.blocked_ip and mac not in self.blocked_mac:
                                 if self.apr_spoof_method == 'time':
-                                    ip = self.detect.arp_mac_spoof_detection_time(ip, mac, packet_interface)
-                                    if ip:
-                                        self.blocked_mac.add(mac)
+                                    mac_ban, ip_ban, interface_ban = self.detect.arp_mac_spoof_detection_time(ip, mac, packet_interface)
 
                                 elif self.apr_spoof_method == 'static_table':
-                                    ip = self.detect.arp_mac_spoof_detection_static(ip, mac, packet_interface)
-                                    if ip:
-                                        self.blocked_mac.add(mac)
+                                    mac_ban, ip_ban, interface_ban = self.detect.arp_mac_spoof_detection_static(ip, mac, packet_interface)
+                                else:
+                                    self.detect.loger.log_message("Unknown arp_spoofing method type")
+                                    return
+                                if mac_ban:
+                                    self.blocked_mac.add(mac)
+                                if ip_ban:
+                                    self.blocked_ip.add(ip)
+                                if interface_ban:
+                                    self.current_blocked_interfaces.add(interface_ban)
+                                    self.interfaces = self.interfaces - self.current_blocked_interfaces
+                                    self.restart_required = True
 
                 if self.enable_vlan_hopping_detect:
                     if packet.haslayer(Dot1Q):
