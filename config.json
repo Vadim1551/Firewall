@@ -37,7 +37,6 @@
       "max_new_mac_address": 15,
       "max_new_ip_address": 15,
       "enable_reactions": {
-        "block_mac": true,
         "block_interface": true
       }
   }
