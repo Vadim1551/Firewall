@@ -75,11 +75,6 @@ class Detect:
                     self.loger.log_message(f"[+] Входящий и исходящий трафик для MAC {mac} был заблокирован")
                     block_mac = mac
 
-                if self.arp_and_mac_spoofing['enable_reactions']['block_mac']:
-                    self.reaction.block_mac(mac)
-                    self.loger.log_message(f"[+] Входящий и исходящий трафик для MAC {mac} был заблокирован")
-                    block_mac = mac
-
                 if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
                     self.reaction.block_ip(ip)
                     self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
@@ -97,12 +92,12 @@ class Detect:
 
         return block_mac, block_ip, block_interface
 
+    # Функция для обнаружения атаки arp or mac spoofing на основе статической ARP таблицы
     def arp_mac_spoof_detection_static(self, ip, mac, packet_interface):
-
         block_mac = ''
         block_ip = ''
         block_interface = ''
-        # Проверка на атаку ARP spoofing
+        # Проверка на наличие полученного ip в ARP таблице
         if ip in self.arp_and_mac_spoofing['static_ip_mac_table']:
             # Если MAC-адрес, ассоциированный с известным IP, не совпадает с доверенным...
             if mac != self.arp_and_mac_spoofing['static_ip_mac_table'][ip]:
@@ -110,7 +105,7 @@ class Detect:
                 message = f"[WARNING] Обнаружена ARP Spoofing атака! \
                 {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
                  на интерфейсе {packet_interface}"
-                print(message)
+                #Параллельный запуск логирования и оповещения администратора на почту
                 self.executor.submit(self.loger.log_message, message)
                 self.executor.submit(self.sender.send_message_to_owner, message)
 

@@ -110,13 +110,14 @@ class Analysis:
             print("Не включен ни один режим анализа угроз")
             exit()
 
+    # Асинхронный запуск считывания пакетов с указанных интерфейсов
     def _start_sniffers(self):
         for iface in list(self.interfaces):
-            print(f"Start sniffer on {iface}")
             sniffer = AsyncSniffer(iface=iface, prn=self.determining_the_package_type, store=False)
             sniffer.start()
             self.sniffers.append((sniffer, iface))
 
+    # Остановка считывания пакетов с заблокированных интерфейсов
     def _stop_blocked_sniffers(self):
         for sniffer in self.sniffers:
             if sniffer[1] not in self.interfaces:
@@ -129,10 +130,13 @@ class Analysis:
             sniffer[0].stop()
             print("Stop all sniffers")
 
+    #Функция запуска асинхронного считывания пакетов и параллельный запуск сканирования уникальных адресов
     def start_sniffing(self):
         try:
+            # Запуск получения сетевых пакетов
             self._start_sniffers()
 
+            # Запуск параллельной задачи для сканирования уникальных адресов, полученных в сетевых пакетах
             if self.enable_cam_table_overflow_detect:
                 thread = threading.Thread(target=self.periodic_analysis_count_mac)
                 thread.daemon = True
