@@ -94,42 +94,42 @@ class Detect:
 
     # Функция для обнаружения атаки arp or mac spoofing на основе статической ARP таблицы
     def arp_mac_spoof_detection_static(self, ip, mac, packet_interface):
-        block_mac = ''
-        block_ip = ''
-        block_interface = ''
+        block_mac = ''   # O(1)
+        block_ip = ''    # O(1)
+        block_interface = ''   # O(1)
         # Проверка на наличие полученного ip в ARP таблице
-        if ip in self.arp_and_mac_spoofing['static_ip_mac_table']:
+        if ip in self.arp_and_mac_spoofing['static_ip_mac_table']:   # O(N)
             # Если MAC-адрес, ассоциированный с известным IP, не совпадает с доверенным...
-            if mac != self.arp_and_mac_spoofing['static_ip_mac_table'][ip]:
+            if mac != self.arp_and_mac_spoofing['static_ip_mac_table'][ip]:   # O(1)
 
                 message = f"[WARNING] Обнаружена ARP Spoofing атака! \
                 {ip} изменил MAC адрес с {self.arp_and_mac_spoofing['static_ip_mac_table'][ip]} на {mac} \
-                 на интерфейсе {packet_interface}"
+                 на интерфейсе {packet_interface}"   # O(1)
                 #Параллельный запуск логирования и оповещения администратора на почту
-                self.executor.submit(self.loger.log_message, message)
-                self.executor.submit(self.sender.send_message_to_owner, message)
+                self.executor.submit(self.loger.log_message, message)   # O(1)
+                self.executor.submit(self.sender.send_message_to_owner, message)   # O(1)
 
-                if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:
-                    self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])
-                    self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")
+                if self.arp_and_mac_spoofing['enable_reactions']['send_correct_arp_response']:   # O(1)
+                    self.reaction.send_correct_arp(ip, self.arp_and_mac_spoofing['static_ip_mac_table'])   # O(1)
+                    self.loger.log_message(f"[+] Отправлен корректный ARP ответ для {ip}")   # O(1)
 
-                if self.arp_and_mac_spoofing['enable_reactions']['block_mac']:
-                    self.reaction.block_mac(mac)
-                    self.loger.log_message(f"[+] Входящий и исходящий трафик для MAC {mac} был заблокирован")
-                    block_mac = mac
+                if self.arp_and_mac_spoofing['enable_reactions']['block_mac']:   # O(1)
+                    self.reaction.block_mac(mac)   # O(N)
+                    self.loger.log_message(f"[+] Входящий и исходящий трафик для MAC {mac} был заблокирован")   # O(1)
+                    block_mac = mac   # O(1)
 
-                if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:
-                    self.reaction.block_ip(ip)
-                    self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")
-                    block_ip = ip
+                if self.arp_and_mac_spoofing['enable_reactions']['block_ip']:   # O(1)
+                    self.reaction.block_ip(ip)   # O(N)
+                    self.loger.log_message(f"[+] Входящий и исходящий трафик для IP {ip} был заблокирован")   # O(1)
+                    block_ip = ip   # O(1)
 
-                if self.arp_and_mac_spoofing['enable_reactions']['block_interface']:
-                    self.reaction.block_interface(packet_interface)
-                    self.loger.log_message(f"[+] трафик с интерфейса {packet_interface} был заблокирован")
-                    block_interface = packet_interface
+                if self.arp_and_mac_spoofing['enable_reactions']['block_interface']:   # O(1)
+                    self.reaction.block_interface(packet_interface)   # O(1)
+                    self.loger.log_message(f"[+] трафик с интерфейса {packet_interface} был заблокирован")   # O(1)
+                    block_interface = packet_interface   # O(1)
 
         else:
-            self.arp_and_mac_spoofing[ip] = mac
+            self.arp_and_mac_spoofing[ip] = mac   # O(1)
         return block_mac, block_ip, block_interface
 
     def vlan_hopping_detection(self, src_mac, vlan_id, packet_type, second_layer, packet_interface):
